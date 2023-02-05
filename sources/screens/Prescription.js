@@ -1,131 +1,119 @@
-import React, { useState } from 'react';
-import { View, Button, Image, Text } from 'react-native';
-import ImagePicker from 'react-native-image-picker';
+import React, { useState } from "react";
+import { View, Text, SafeAreaView, Modal, ActivityIndicator, Alert, StyleSheet } from 'react-native'
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import Fontisto from 'react-native-vector-icons/Fontisto'
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
+import MlkitOcr from 'react-native-mlkit-ocr';
 import TextDetector from 'react-native-text-detector';
 
-const options = {
-  title: 'Select Image',
-  customButtons: [{ name: 'fb', title: 'Choose Photo from Facebook' }],
-  storageOptions: {
-    skipBackup: true,
-    path: 'images',
-  },
-};
+export default function Prescription() {
 
-const Prescription = () => {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [detectedText, setDetectedText] = useState(null);
+  const [loading, setLoading] = useState(false)
 
-  const selectImage = async () => {
-    const pickerResponse = await new Promise((resolve) => {
-      ImagePicker.showImagePicker(options, (response) => {
-        resolve(response);
-      });
-    });
+  const onTakePhoto = () => launchCamera({ mediaType: 'photo' }, (img) => LaunchCameraGallery(img, setLoading));
+  const onSelectImagePress = () => launchImageLibrary({ mediaType: 'photo' }, (img) => LaunchCameraGallery(img, setLoading));
 
-    if (pickerResponse.didCancel) {
-      console.log('User cancelled image picker');
-    } else if (pickerResponse.error) {
-      console.log('ImagePicker Error: ', pickerResponse.error);
-    } else if (pickerResponse.customButton) {
-      console.log('User tapped custom button: ', pickerResponse.customButton);
-    } else {
-      const source = { uri: pickerResponse.uri };
-      setSelectedImage(source);
 
-      try {
-        const detected = await TextDetector.detectFromUri(pickerResponse.uri);
-        setDetectedText(detected);
-      } catch (e) {
-        console.error(e);
+
+  const LaunchCameraGallery = async (media, setLoading) => {
+
+    let array = []
+
+    try {
+
+      if (!media.didCancel) {
+
+        console.log("not canceld");
+        console.log(media?.assets[0]?.uri);
+        const detected = await TextDetector.detectFromUri("https://i.stack.imgur.com/i1Abv.png");
+        console.log(detected, "detected");
+        // const resultFromUri = await MlkitOcr.detectFromUri()
+        // console.log(resultFromUri);
+        // const result = await TextRecognition.recognize(media?.assets[0]?.uri);
+
+        // for (let block of result.blocks) {
+
+        //   for (let line of block.lines) {
+        //     array.push(line.text)
+        //   }
+
+        // }
+
+        // let printArray = array.map((i) => i + "\n")
+
+        // Alert.alert('Recognized Text', printArray.toString(), [{ text: 'Upload', onPress: () => { uploadText(array, setLoading) }, style: 'cancel' }, { text: 'Cancel', onPress: () => { } },], { cancelable: true });
+
       }
+
+    } catch (error) {
+      console.log(error, "error");
     }
+
   };
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Button title="Select Image" onPress={selectImage} />
-      {selectedImage && (
-        <Image source={selectedImage} style={{ width: 300, height: 300 }} />
-      )}
-      {detectedText && (
-        <View>
-          {detectedText.map((block, index) => (
-            <Text key={index} style={{ backgroundColor: 'pink' }}>
-              {block.value}
-            </Text>
-          ))}
+    <View style={Theme.container}>
+      <Text style={Theme.Heading}>Upload Prescription</Text>
+      <View style={Theme.MidBox}>
+        <Text style={Theme.HowText}>How do you want to upload?</Text>
+        <Fontisto onPress={onTakePhoto} name="camera" size={60} color="#FFFFFF" />
+        <MaterialIcons onPress={onSelectImagePress} name="add-to-photos" size={80} color="#FFFFFF" />
+      </View>
+      <View style={Theme.Bottom}>
+        <Text style={Theme.bottomText}>The Prescription upload guide:</Text>
+        <Text style={Theme.bottomText}>* Do not crop any part of the Prescription picture</Text>
+        <Text style={Theme.bottomText}>* Avoid uploading a blurred and unclear picture of Prescription</Text>
+      </View>
+      <Modal transparent visible={loading}>
+        <View style={Theme.loaderContainer}>
+          <ActivityIndicator color="red" size="large" />
         </View>
-      )}
+      </Modal>
     </View>
-  );
-};
+  )
 
+}
 
-
-export default Prescription;
-
-/*import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { StyleSheet, Text, View,TextInput,Button,TouchableOpacity, Alert, ImageBackground } from 'react-native';
-import Icon from 'react-native-vector-icons/Fontisto';
-import Icon1 from 'react-native-vector-icons/MaterialIcons';
-import { styles } from './styles';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
-
-import Patient from './Patient';
-import Icon3 from 'react-native-vector-icons/AntDesign';
-const img_src = require('../assets/background.jpg')
-
-export default function Prescription({navigation}) {
-    return (
-        <View style = {styles.MainContainer}>
-        
-            <View>
-                <Text style={[styles.container2, {paddingTop:'13%',paddingBottom:50,fontSize:30, color:'#000044',alignSelf:'center'}]}>
-                Upload Prescription</Text>
-            </View>
-
-            <View style={[styles.container7, {backgroundColor:'#808977'}]}>
-
-                <Text style={{paddingTop:'10%',color: '#FFFFFF',fontSize:25,alignSelf:'center',fontFamily:'Iowan Old Style'}}>
-                    How do you want to upload?
-                </Text>
-
-                <TouchableOpacity onPress={()=>{ Alert.alert('Work'); } }
-                 style={{paddingTop:30,alignSelf:'center'}}>
-                    <Icon name="camera" size={70} color="#FFFFFF" />
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={()=>{ Alert.alert('Work'); } }
-                style={{paddingTop:30,paddingLeft:100}} >
-                        <Icon1 name="add-to-photos" size={93} color="#FFFFFF" />
-                    </TouchableOpacity>
-
-            </View>
-
-            <Text style={{paddingTop:50,color: '#183E9F',fontSize:25,alignSelf:'center',fontFamily:'Iowan Old Style'}}>
-                The Prescription upload guide:
-            </Text>
-
-
-            <Text style={{paddingTop:25,color: '#183E9F',fontSize:25,alignSelf:'center',fontFamily:'Iowan Old Style'}}>
-                  * Do not crop any part of the Prescription picture
-            </Text>
-
-            <Text style={{paddingTop:10,color: '#183E9F',fontSize:25,alignSelf:'center',fontFamily:'Iowan Old Style'}}>
-                  * Avoid uploading a blurred and unclear picture of Prescription
-            </Text>            
-            <View>
-              <TouchableOpacity style={{ backgroundColor: '#9DA990', width:'120%', paddingVertical: "3%",justifyContent: "center", alignItems: "center", marginTop: '5%' }}
-              onPress={() => navigation.navigate(Patient)}>
-              <Text style={{ fontSize: 20, color: '#FFFFFF', textAlign: "left" }}>
-                <Icon3 name="leftcircle" size={20} color="#FFFFFF" /> back</Text>
-              </TouchableOpacity>
-            </View>
-        </View>
-        
-   
- );
-}*/
-
+const Theme = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "lightgrey"
+  },
+  Heading: {
+    fontSize: 22,
+    textAlign: "center",
+    marginVertical: 20,
+    color: '#000044',
+    fontWeight: "bold"
+  },
+  MidBox: {
+    paddingVertical: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "grey",
+    marginHorizontal: 50,
+    borderRadius: 20,
+    rowGap: 30,
+    marginTop: 20
+  },
+  HowText: {
+    color: "white",
+    fontSize: 16,
+    textAlign: "center",
+  },
+  Bottom: {
+    flex: 1,
+    marginTop: 40,
+    marginHorizontal: 20,
+    rowGap: 20
+  },
+  bottomText: {
+    color: 'grey',
+    fontSize: 20
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  }
+})
